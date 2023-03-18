@@ -11,13 +11,18 @@ class RSJsonObject extends RSJsonBasic {
         parent::__construct();
     }
 
-    public static function Validate(array $obj): true{
-        foreach($obj as $key => $val){
+    public static function Validate(array& $obj): true{
+        foreach($obj as $key => &$val){
             if (!is_string($key)){
                 throw new Exception(var_export($key, true).' must be a string (keys must be strings)');
             }
             if (!is_subclass_of($val, 'RSJsonBasic')){
-                throw new Exception(var_export($val, true).' Is not a valid RSJsonBasic');
+                //lets try to automatically fix
+                $val = RSJSonUtil::CreateFromMixed($val);
+                if ($val === false){
+                    unset($obj[$key]);
+                }
+                //throw new Exception(var_export($val, true).' Is not a valid RSJsonBasic');
             }
         }
         return true;

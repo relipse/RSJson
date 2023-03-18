@@ -35,3 +35,17 @@ if ($decoded){
     $pretty = json_encode($decoded, JSON_PRETTY_PRINT);
     echo $pretty;
 }
+
+
+$jsjsonobj2 = new RSJsonObject(['fizz'=>['buzz'=>1, 'bazz'=>'bizzy', 'bar'=>[2,3,4]]]);
+$rsjsonstring = $jsjsonobj2->AsJsonString();
+
+echo $rsjsonstring;
+
+$decoded = json_decode($rsjsonstring, true);
+print_r($decoded);
+
+if ($decoded){
+    $pretty = json_encode($decoded, JSON_PRETTY_PRINT);
+    echo $pretty;
+}

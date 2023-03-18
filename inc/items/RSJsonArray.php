@@ -13,15 +13,21 @@ class RSJsonArray extends RSJsonBasic {
         parent::__construct();
     }
 
-    public static function Validate(array $ary): true{
+    public static function Validate(array& $ary): true{
         foreach($ary as $key => $val){
             if (!is_int($key)){
                 throw new \Exception($key.' is not an int');
             }
             if (!is_subclass_of($val, 'RSJsonBasic')){
-                throw new Exception(var_export($val, true).' Is not a valid RSJsonBasic');
+                //lets try to automatically fix
+                $val = RSJSonUtil::CreateFromMixed($val);
+                if ($val === false){
+                    unset($ary[$key]);
+                }
+                //throw new Exception(var_export($val, true).' Is not a valid RSJsonBasic');
             }
         }
+        $ary = array_values($ary);
         return true;
     }
 

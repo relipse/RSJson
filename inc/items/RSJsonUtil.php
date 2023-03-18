@@ -1,5 +1,51 @@
 <?php
 class RSJSonUtil {
+
+    public static function isAssoc(array $arr)
+    {
+        if (array() === $arr) return false;
+        return array_keys($arr) !== range(0, count($arr) - 1);
+    }
+
+    public static function CreateFromMixed(mixed $var): RSJsonBasic|false|null{
+        $type = gettype($var);
+        switch($type){
+            case 'boolean':
+                return new RSJsonInt($var ? 1 : 0);
+            case 'integer':
+                return new RSJsonInt($var);
+            case 'double':
+                return new RSJsonFloat($var);
+            case 'string':
+                return new RSJsonString($var);
+            case 'object':
+                $var = (array)$var;
+            case 'array':
+                $fixed_ary = [];
+                foreach($var as $k => $val){
+                    $fixed = self::CreateFromMixed($val);
+                    if ($fixed !== false) {
+                        $fixed_ary[$k] = $fixed;
+                    }
+                }
+                if (self::isAssoc($fixed_ary)){
+                    return new RSJsonObject($fixed_ary);
+                }
+                else{
+                    return new RSJsonArray($fixed_ary);
+                }
+            case 'NULL':
+                return null;
+
+            //unsupported
+            case 'resource':
+            case 'resource (closed)':
+            case 'unknown type':
+            default:
+                return false;
+        }
+    }
+
     public static function MakeKeyString(string $key, RSQuoteStyleType $quoteStyle = RSQuoteStyleType::qsDOUBLE ){
         $len = strlen($key);
         if (empty($len)){
