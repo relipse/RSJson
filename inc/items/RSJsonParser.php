@@ -380,6 +380,7 @@ class RSJsonParser {
             //if we made it here, then we can use the peek token lexeme as a key in a keyvalue pair
             $this->eatNextToken();
             $this->keyStack[] = $this->curToken->lexeme;
+            $key = $this->curToken->lexeme;
             $pushedKey = true;
         }else{
             throw new \Exception("Expected key value (ie. \"mykey\"");
@@ -387,7 +388,7 @@ class RSJsonParser {
 
         $this->match(RSJsonParserTokenType::COLON);
 
-        $this->js_value();
+        $this->js_value($key);
 
         if ($pushedKey){
             array_pop($this->keyStack);
@@ -400,37 +401,42 @@ class RSJsonParser {
             $this->js_keyvalue_list();
         }
     }
-    public function appendValueToLastOnStack(RSJsonBasic $basic): void {
+    public function appendValueToLastOnStack(RSJsonBasic $basic, string|int $key = null): void {
+        if (is_null($key)){
+            $key = end($this->keyStack);
+        }
+        if (empty($key)){
+            throw new \Exception("Invalid key. Nothing in keyStack");
+        }
+
          $end = end($this->jsonObjStack);
          /** @var $end RSJsonObject */
          if (empty($end)) {
             throw new \Exception("no object on the stack");
          }
          switch ($end -> Type()) {
-            case RSJsonType::rstObject:
-                if (empty($this->keyStack)) {
-                    $this->keyStack[] = "<undefined>";
-                }
-                $end->set(end($this->keyStack), $basic);
-            break;
-            case RSJsonType::rstArray:
-                //todo some finaggling with the array pushing
-                $end->set(end($this->keyStack), $basic);
-              break;
-            default:
-                throw new \Exception("this should never happen. last object on stack is not a RSJsonObject or RSJsonArray");
-        }
+             case RSJsonType::rstObject:
+                 $end->set($key, $basic);
+                 break;
+             case RSJsonType::rstArray:
+                 //todo some finaggling with the array pushing
+                 $end->push($basic);
+                 break;
+             default:
+                 throw new \Exception("this should never happen. last object on stack is not a RSJsonObject or RSJsonArray");
+         }
+         $this->jsonObjStack[count($this->jsonObjStack)-1] = $end;
     }
-    public function js_value(){
+    public function js_value(string $key = null){
         $this->peek();
         if ($this->peekToken->tokenType === RSJsonParserTokenType::OPEN_BRACE){
             $obj = $this->js_object();
-            $this->appendValueToLastOnStack($obj);
+            $this->appendValueToLastOnStack($obj, $key);
             return;
         }
         if ($this->peekToken->tokenType === RSJsonParserTokenType::OPEN_BRACKET){
             $ary = $this->js_array();
-            $this->appendValueToLastOnStack($ary);
+            $this->appendValueToLastOnStack($ary, $key);
             return;
         }
         $this->eatNextToken();
@@ -449,9 +455,6 @@ class RSJsonParser {
                 if ($end){
                     switch($end->Type()){
                         case RSJsonType::rstObject:
-                            if (empty($this->keyStack)){
-                                $this->keyStack[] = "-undefined-";
-                            }
                             $end->set(end($this->keyStack),
                                 RSJSonUtil::CreateFromMixed($this->curToken->lexeme,
                                     false,
@@ -460,6 +463,10 @@ class RSJsonParser {
                             );
                             break;
                         case RSJsonType::rstArray:
+                            $end->push(RSJSonUtil::CreateFromMixed($this->curToken->lexeme,
+                                false,
+                                RSJSonUtil::GetRSJsonTypeFromTokenType($this->curToken->tokenType)
+                            ));
                             break;
                         default:
                             throw new \Exception("the object stack MUST contain RSJsonObject or RSJsonArray instance types! this should never occur");

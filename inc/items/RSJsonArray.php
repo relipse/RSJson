@@ -51,6 +51,10 @@ class RSJsonArray extends RSJsonBasic {
         $this->ary[$key] = $value;
     }
 
+    public function push(?RSJsonBasic $value){
+        $this->ary[] = $value;
+    }
+
     public function count(): int{
         return count($this->ary);
     }
