@@ -13,6 +13,10 @@ class RSJsonBasic {
         return '';
     }
 
+    public function __toString(): string {
+        return $this->AsJsonString();
+    }
+
     public function __construct()
     {
         $this->m_encStr = '';

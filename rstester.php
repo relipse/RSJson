@@ -49,3 +49,19 @@ if ($decoded){
     $pretty = json_encode($decoded, JSON_PRETTY_PRINT);
     echo $pretty;
 }
+
+$parser = new RSJsonParser();
+try {
+    $parser->parse($pretty);
+    echo $parser->root;
+}catch(\Throwable $e){
+    die($e->getMessage());
+}
+
+$parser = new RSJsonParser();
+try {
+    $parser->parse('{"foo":"bar"}');
+    echo $parser->root;
+}catch(\Throwable $e){
+    die($e->getMessage());
+}

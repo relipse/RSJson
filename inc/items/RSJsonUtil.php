@@ -7,8 +7,31 @@ class RSJSonUtil {
         return array_keys($arr) !== range(0, count($arr) - 1);
     }
 
-    public static function CreateFromMixed(mixed $var): RSJsonBasic|false|null{
-        $type = gettype($var);
+
+    public static function GetRSJsonTypeFromTokenType(RSJsonParserTokenType $tokenType): RSJsonType {
+        return match($tokenType){
+            RSJsonParserTokenType::INT => RSJsonType::rstInt,
+            RSJsonParserTokenType::FLOAT => RSJsonType::rstFloat,
+            RSJsonParserTokenType::STRING => RSJsonType::rstString,
+            RSJsonParserTokenType::BOOL => RSJsonType::rstInt,
+            default => RSJsonType::rstInvalid,
+        };
+    }
+
+    public static function CreateFromMixed(mixed $var, bool $supersmart = false, ?RSJsonType $specifytype = null): RSJsonBasic|false|null{
+        $type = 'unknown type';
+        if (!is_null($specifytype)){
+            $type = match($specifytype) {
+                RSJsonType::rstObject => 'object',
+                RSJsonType::rstArray => 'array',
+                RSJsonType::rstFloat => 'double',
+                RSJsonType::rstInt => 'integer',
+                RSJsonType::rstString => 'string',
+                default => 'unknown type',
+            };
+        }else {
+            $type = gettype($var);
+        }
         switch($type){
             case 'boolean':
                 return new RSJsonInt($var ? 1 : 0);
@@ -17,13 +40,24 @@ class RSJSonUtil {
             case 'double':
                 return new RSJsonFloat($var);
             case 'string':
+                //Yes it is a string, but what kind of string?
+                if ($supersmart){
+                    if (is_numeric($var)){
+                        //yes it might be a negative number -42
+                        if (ctype_digit(str_replace('-','',$var))){
+                            return new RSJsonInt((int)$var);
+                        }else{
+                            return new RSJsonFloat((float)$var);
+                        }
+                    }
+                }
                 return new RSJsonString($var);
             case 'object':
                 $var = (array)$var;
             case 'array':
                 $fixed_ary = [];
                 foreach($var as $k => $val){
-                    $fixed = self::CreateFromMixed($val);
+                    $fixed = self::CreateFromMixed($val, $supersmart);
                     if ($fixed !== false) {
                         $fixed_ary[$k] = $fixed;
                     }
