@@ -7,7 +7,7 @@ class RSJsonString extends RSJsonBasic
         parent::__construct();
     }
 
-    public function AsJsonString(): string
+    public function AsJsonString(bool $pretty = false, int $indent = 0): string
     {
         return $this->m_encStr = RSJSonUtil::MakeKeyString($this->strValue, RSQuoteStyleType::qsDOUBLE);
     }

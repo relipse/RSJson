@@ -27,11 +27,11 @@ Here is the BNF for Really Simple JSON
 
 class RSJsonParser {
     protected int $debug_level = 1;
-    protected bool $allow_block_comments = true; //yes I know, it's not real json with comments allowed
-    protected bool $allow_single_quote_string_literals = true; //yes I know, it's not real json with single quote string literals allowed
-    protected bool $allow_positive_ints_as_keys = true; // ""
-    protected bool $allow_positive_floats_as_keys = true; // ""
-    protected bool $allow_variables_as_keys = true; // ""
+    protected bool $allow_block_comments = false; //yes I know, it's not real json with comments allowed
+    protected bool $allow_single_quote_string_literals = false; //yes I know, it's not real json with single quote string literals allowed
+    protected bool $allow_positive_ints_as_keys = false; // ""
+    protected bool $allow_positive_floats_as_keys = false; // ""
+    protected bool $allow_variables_as_keys = false; // ""
 
     protected string $s = '';
 

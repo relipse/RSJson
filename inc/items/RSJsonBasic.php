@@ -8,13 +8,13 @@ class RSJsonBasic {
        return RSJsonType::rstInvalid;
     }
     //encode this (or derived) object to a json string
-    public function AsJsonString(): string
+    public function AsJsonString(bool $pretty = false, int $indent = 0): string
     {
         return '';
     }
 
     public function __toString(): string {
-        return $this->AsJsonString();
+        return $this->AsJsonString(true, 4);
     }
 
     public function __construct()

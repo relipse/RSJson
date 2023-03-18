@@ -53,18 +53,26 @@ if ($decoded){
 $parser = new RSJsonParser();
 try {
     $parser->parse($pretty);
-    echo "\n".$parser->root."\n";
-    $jsonobj = json_decode($parser->root);
+    echo "\n";
+    $parser_pretty_print = $parser->root;
+    echo $parser_pretty_print;
+    echo "\n";
+
+    $jsonobj = json_decode($parser_pretty_print);
     if (empty($jsonobj)){
         echo "Invalid JSON\n";
     }else{
-        echo json_encode($jsonobj, JSON_PRETTY_PRINT);
+        $pretty = json_encode($jsonobj, JSON_PRETTY_PRINT);
+        echo $pretty;
+        if ($pretty !== $parser_pretty_print){
+            echo "JSON pretty print does not match parser Pretty Print\n";
+        }
     }
 }catch(\Throwable $e){
     die($e->getMessage());
 }
 
-/*
+
 $parser = new RSJsonParser();
 try {
     $parser->parse('{"foo":"bar"}');
@@ -72,4 +80,3 @@ try {
 }catch(\Throwable $e){
     die($e->getMessage());
 }
-*/

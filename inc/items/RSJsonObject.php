@@ -47,18 +47,32 @@ class RSJsonObject extends RSJsonBasic {
         return count($this->obj);
     }
 
-    public function AsJsonString(): string
+    public function AsJsonString(bool $pretty = false, int $indent = 0): string
     {
         $s = "{";
+        if ($pretty && $indent) {
+            $s .= "\n";
+            $s .= str_pad(' ', $indent);
+        }
         if ($this->count() > 0){
             $i = 0;
             foreach($this->obj as $key => $value){
                 $i++;
                 if ($i > 1){
                     $s .= ',';
+                    if ($pretty){
+                        $s .= "\n";
+                        $s .= str_pad(' ', $indent);
+                    }
                 };
                 /** @var $value RSJsonBasic */
-                $s .= RSJSonUtil::MakeKeyString($key) . ':'. $value->AsJsonString();
+                $s .= RSJSonUtil::MakeKeyString($key) . ':'. ($pretty?' ':'').$value->AsJsonString($pretty, $indent+4);
+            }
+        }
+        if ($pretty){
+            $s .= "\n";
+            if ($indent-4 > 0) {
+                $s .= str_pad(' ', $indent - 4);
             }
         }
         $s .= '}';
