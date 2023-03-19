@@ -50,7 +50,7 @@ class RSJsonObject extends RSJsonBasic {
     public function AsJsonString(bool $pretty = false, int $indent = 0): string
     {
         $s = "{";
-        if ($pretty && $indent) {
+        if ($pretty) {
             $s .= "\n";
             $s .= str_pad(' ', $indent);
         }

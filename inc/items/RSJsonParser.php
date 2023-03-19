@@ -26,8 +26,9 @@ Here is the BNF for Really Simple JSON
 */
 
 class RSJsonParser {
-    protected int $debug_level = 1;
+    public int $debug_level = 0;
     protected bool $allow_block_comments = false; //yes I know, it's not real json with comments allowed
+    protected bool $allow_slashslash_comments = false; // ""
     protected bool $allow_single_quote_string_literals = false; //yes I know, it's not real json with single quote string literals allowed
     protected bool $allow_positive_ints_as_keys = false; // ""
     protected bool $allow_positive_floats_as_keys = false; // ""
@@ -38,6 +39,10 @@ class RSJsonParser {
     protected string $prev_char = '';
 
     public function __construct($opts = []){
+        if (isset($opts['JSONC'])){
+            $this->allow_block_comments = true;
+            $this->allow_slashslash_comments = true;
+        }
         if (isset($opts['allow_block_comments'])){
             $this->allow_block_comments = $opts['allow_block_comments'];
         }
@@ -64,6 +69,10 @@ class RSJsonParser {
     protected array $keyStack = [];
 
     public ?RsJsonObject $root = null;
+
+    public function output(){
+        return $this->root->AsJsonString(true, 4);
+    }
     protected array $jsonObjStack = [];
 
     protected string $buffer = '';
@@ -194,6 +203,7 @@ class RSJsonParser {
         if ($count > 0){
             $this->curToken = $this->tokenStack[$count-1];
             array_pop($this->tokenStack);
+            $this->log($this->curToken);
             return $this->curToken;
         }
         $this->skipwhitespace();
@@ -221,7 +231,26 @@ class RSJsonParser {
                 $this->nextchar(); //currently at *
                 $this->nextchar(); //now passing /
                 $this->skipwhitespace();
-                $c = $this->curchar();
+                $this->curToken->tokenType = RSJsonParserTokenType::COMMENT;
+                $this->curToken->lexeme = '/*...*/';
+                //skip to next token for comments
+                return $this->eatNextToken();
+            }
+        }
+
+        if ($this->allow_slashslash_comments){
+            if ($this->curchar() === '/' && $this->peekchar() === '/'){
+                $this->log('// comment detected. Attempting to skip until \n or EOF');
+                while($this->curchar() !== "\n" && $this->curchar() !== ''){
+                    $this->log($this->curchar());
+                    $this->nextchar();
+                }
+                $this->skipwhitespace();
+                $this->curToken->tokenType = RSJsonParserTokenType::COMMENT;
+                $this->curToken->lexeme = '//...';
+
+                //skip to next token for comments
+                return $this->eatNextToken();
             }
         }
 
@@ -246,7 +275,6 @@ class RSJsonParser {
             case ',':
                 $this->curToken->tokenType = RSJsonParserTokenType::COMMA;
                 break;
-            //case '"': $this->curToken->tokenType = RSJsonParserTokenType::DOUBLE_QUOTE; break;
             //case '\'': $this->curToken->tokenType = RSJsonParserTokenType::SINGLE_QUOTE; break;
             case '\0':
             case '':
@@ -278,11 +306,11 @@ class RSJsonParser {
                 }
         }//end switch
         $this->nextchar();
-
         return $this->curToken;
     }
 
     public function match(RSJsonParserTokenType $tokenType): true{
+
         $next = $this->eatNextToken();
         if (is_null($next)){
             throw new \Exception("Nothing left. Expected ".$tokenType->name.' '.$this->s.' cur_char: '.$this->cur_char.' previous char: '.$this->prev_char);
@@ -296,6 +324,7 @@ class RSJsonParser {
             $this->log($s);
             throw new Exception($s);
         }
+        $this->log("Matched $tokenType->name");
         return true;
     }
 
@@ -381,11 +410,11 @@ class RSJsonParser {
             $this->eatNextToken();
             $this->keyStack[] = $this->curToken->lexeme;
             $key = $this->curToken->lexeme;
+            $this->log($key.' '.$this->curToken);
             $pushedKey = true;
         }else{
-            throw new \Exception("Expected key value (ie. \"mykey\"");
+            throw new \Exception("\"$this->s\" Expected key value (ie. \"mykey\" got ".$this->curToken);
         }
-
         $this->match(RSJsonParserTokenType::COLON);
 
         $this->js_value($key);
